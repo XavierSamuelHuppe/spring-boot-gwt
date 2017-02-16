@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module rename-to="advise">
+    <inherits name="com.google.gwt.user.User"/>
+
+    <source path=""/>
+    <!-- Libs inherits -->
+
+
+    <entry-point class="ca.ingeno.advise.client.AppTest"/>
+
+</module>

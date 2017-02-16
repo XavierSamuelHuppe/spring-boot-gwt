@@ -1,0 +1,61 @@
+# Project Specific
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+# Intellij
+.idea/**
+*.iml
+*.iws
+*.ipr
+*.ids
+*.orig
+/out
+
+# Maven
+/log/**
+/target/**
+
+# Gradle
+.gradle/**
+
+# Package Files
+/war
+*.jar
+*.war
+*.ear
+*.db
+
+# Mac OSX
+.DS_Store
+.svn
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# Logs
+*.log
+
+# Directories
+/build/**
+/bin/**
+/spring_loaded/**
+/deploy/**
+
+# Others
+*.class
+*.*~
+*~
+.merge_file*
+
+# Gradle
+.gradle/**
+!gradle/wrapper/gradle-wrapper.jar
+gradle
+
+# Docker
+/docker
