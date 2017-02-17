@@ -13,7 +13,6 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
-apply plugin: 'war'
 apply plugin: 'org.springframework.boot'
 
 jar {
@@ -27,16 +26,24 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    // We need to use Jetty as Spring Boot Tomcat conflicts with GWT
+    compile.exclude module: "spring-boot-starter-tomcat"
+}
+
+ext {
+    gwtVersion = '2.4.0'
+}
 
 dependencies {
-    // Compile GWT libs, needed for gwtCompile and the javaCompile
-    // Also includes the servlet-api
-    providedCompile 'com.google.gwt:gwt-user:2.4.0'
-    providedCompile 'com.google.gwt:gwt-dev:2.4.0'
+
+    // Has to come before gwt-dev as gwt-dev includes older servlet api classes that is
+    // incompatible with Spring Boot
+    compile 'javax.servlet:javax.servlet-api:3.1.0'
 
     // Needed for GWT compile and at runtime for RequestBuilder
     // Specify two artifacts as workaround for GRADLE-1934
-    compile('javax.validation:validation-api:1.0.0.GA') {
+    compile('javax.validation:validation-api:1.1.0.Final') {
         artifact {
             name = 'validation-api'
             type = 'jar'
@@ -48,21 +55,9 @@ dependencies {
         }
     }
 
-    // Runtime GWT libraries, should be included in WAR
-    runtime 'com.google.gwt:gwt-servlet:2.4.0'
-    //runtime 'org.json:json:20090211'
-
-    //Logging
-    compile 'org.slf4j:slf4j-api:1.6.2'
-    compile 'org.slf4j:jcl-over-slf4j:1.6.2'
-    compile 'org.slf4j:jul-to-slf4j:1.6.2'
-    compile 'ch.qos.logback:logback-classic:1.0.3'
-    compile 'ch.qos.logback:logback-core:1.0.3'
-    compile 'log4j:log4j:1.2.16'
-
-    compile 'com.google.gwt:gwt-user:2.4.0'
-    compile 'com.google.gwt:gwt-servlet:2.4.0'
-    compile 'com.google.gwt:gwt-dev:2.4.0'
+    compile "com.google.gwt:gwt-user:${gwtVersion}"
+    compile "com.google.gwt:gwt-servlet:${gwtVersion}"
+    compile "com.google.gwt:gwt-dev:${gwtVersion}"
 
     compile 'com.google.gwt.inject:gin:1.5.0'
     compile 'com.google.inject:guice:3.0-rc2'
@@ -70,12 +65,13 @@ dependencies {
 
     compile('org.springframework.boot:spring-boot-starter-actuator')
     compile('org.springframework.boot:spring-boot-starter-web')
+    compile('org.springframework.boot:spring-boot-starter-jetty')
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
 task compileGwt(dependsOn: classes, type: JavaExec) {
-    ext.buildDir = "${project.buildDir}/gwt"
-    ext.extraDir = "${project.buildDir}/extra"
+    ext.buildDir = "${buildDir}/gwt"
+    ext.extraDir = "${buildDir}/extra"
 
     inputs.source sourceSets.main.java.srcDirs
     inputs.dir sourceSets.main.output.resourcesDir
@@ -100,8 +96,7 @@ task compileGwt(dependsOn: classes, type: JavaExec) {
         ]
     }
 
-    args =
-        [
+    args = [
             'ca.ingeno.advise.advise', // Your GWT module
             '-war', buildDir,
             '-logLevel', 'INFO',
@@ -114,18 +109,10 @@ task compileGwt(dependsOn: classes, type: JavaExec) {
     maxHeapSize = '256M'
 }
 
-
-war.dependsOn compileGwt
-war {
-    from compileGwt.buildDir
-}
-war.doLast {
-    ant.unzip(src: war.archivePath, dest: "./war")
+task processGwtResources(dependsOn: compileGwt, type: Copy) {
+    from "${buildDir}/gwt/advise"
+    into "${buildDir}/main/static/advise"
 }
 
-task copyResources(type: Copy) {
-    from 'war/advise'
-    into 'src/main/resources/static/advise'
-}
-copyResources.dependsOn war
-bootRun.dependsOn copyResources
+jar.dependsOn processGwtResources
+bootRun.dependsOn processGwtResources
